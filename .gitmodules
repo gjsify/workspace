@@ -1,0 +1,24 @@
+[submodule "doc-old"]
+	path = doc-old
+	url = git@github.com:gjsify/doc.git
+[submodule "easy6502"]
+	path = easy6502
+	url = git@github.com:JumpLink/easy6502.git
+[submodule "eu.jumplink.Learn6502"]
+	path = eu.jumplink.Learn6502
+	url = https://github.com/flathub/eu.jumplink.Learn6502
+[submodule "gjs"]
+	path = gjs
+	url = git@ssh.gitlab.gnome.org:GNOME/gjs.git
+[submodule "gjsify"]
+	path = gjsify
+	url = git@github.com:gjsify/gjsify.git
+[submodule "gnome-shell"]
+	path = gnome-shell
+	url = git@github.com:gjsify/gnome-shell.git
+[submodule "pixel-rpg/map-editor"]
+	path = pixel-rpg/map-editor
+	url = git@github.com:PixelRPG/map-editor.git
+[submodule "ts-for-gir"]
+	path = ts-for-gir
+	url = git@github.com:gjsify/ts-for-gir.git
