@@ -13,13 +13,12 @@ This directory is a **meta-monorepo**: a workspace that collects several indepen
 | [doc-old/](doc-old/) | `gjsify/doc` | Legacy documentation site (archived) |
 | [easy6502/](easy6502/) | `JumpLink/easy6502` | 6502 learning env — GNOME/Web/Android apps (Yarn 4 monorepo) |
 | [eu.jumplink.Learn6502/](eu.jumplink.Learn6502/) | `flathub/eu.jumplink.Learn6502` | Flathub manifest for the Learn6502 app |
-| [gjs/](gjs/) | `GNOME/gjs` (GitLab) | Upstream GJS runtime — **read-only reference**, do not patch |
 | [gjsify/](gjsify/) | `gjsify/gjsify` | Node.js + Web + DOM APIs for GJS (Yarn workspaces monorepo) |
 | [gnome-shell/](gnome-shell/) | `gjsify/gnome-shell` | GNOME Shell fork — TS typings/tooling ground |
 | [pixel-rpg/map-editor/](pixel-rpg/map-editor/) | `PixelRPG/map-editor` | Tile RPG map editor (Excalibur.js + GJS/GTK) |
 | [ts-for-gir/](ts-for-gir/) | `gjsify/ts-for-gir` | GIR → TypeScript generator. Produces `@girs/*` consumed by the others |
 
-Dependency direction (at the code level): `ts-for-gir` → generates `@girs/*` types → consumed by `gjsify`, `easy6502`, `pixel-rpg/map-editor`, GJS app examples. `gjs/` is the upstream runtime everything targets. The other repos are independent.
+Dependency direction (at the code level): `ts-for-gir` → generates `@girs/*` types → consumed by `gjsify`, `easy6502`, `pixel-rpg/map-editor`, GJS app examples. The upstream GJS runtime everything targets is not tracked directly here — use `gjsify/refs/gjs` when you need it as a reference. The other repos are independent.
 
 ## Submodule workflow
 

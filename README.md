@@ -10,7 +10,6 @@ This repo is not itself a buildable project — there is no shared `package.json
 |---|---|
 | [gjsify/](gjsify/) | **Node.js, Web, and DOM APIs for GJS.** Lets you write GJS apps that use `fs`, `fetch`, `Buffer`, `WebSocket`, `Canvas`, WebGL and friends — backed by native GNOME libraries (Soup, Gio, GLib, Cairo, GStreamer, WebKit, …). |
 | [ts-for-gir/](ts-for-gir/) | **Generates TypeScript typings** from GObject Introspection (`.gir`) files. Produces the `@girs/*` packages that every other project in this workspace uses for type-safe GTK/Adwaita/GJS code. |
-| [gjs/](gjs/) | The **upstream GJS runtime** (SpiderMonkey + GNOME bindings). Kept as a read-only reference for runtime behavior, bug hunting, and feature availability checks. |
 | [gnome-shell/](gnome-shell/) | A **TypeScript-friendly fork of GNOME Shell** — used as a proving ground for typings and tooling against a real-world GJS codebase. |
 | [easy6502/](easy6502/) | A **6502 assembly learning environment** with three frontends (GNOME desktop, web, Android) sharing a common TypeScript core. Real-world consumer of `@girs/*` and GJS apps. |
 | [eu.jumplink.Learn6502/](eu.jumplink.Learn6502/) | The **Flathub manifest** for the Learn6502 desktop app (the GNOME frontend of easy6502). |
@@ -20,18 +19,18 @@ This repo is not itself a buildable project — there is no shared `package.json
 ## How the pieces fit together
 
 ```
-      ts-for-gir                 gjs (upstream runtime)
-           │                            ▲
-           ▼                            │  target
-     @girs/* types  ─────────┐          │
-           │                 │          │
-           ▼                 ▼          │
+      ts-for-gir
+           │
+           ▼
+     @girs/* types  ─────────┐
+           │                 │
+           ▼                 ▼
         gjsify  ────────▶  easy6502, pixel-rpg, gnome-shell, …
      (Node/Web/DOM APIs      (apps that run on GJS)
       on GNOME libs)
 ```
 
-`ts-for-gir` produces typings from introspection data. `gjsify` provides the runtime shims so ordinary Node.js and Web code can run under GJS. The apps use both.
+`ts-for-gir` produces typings from introspection data. `gjsify` provides the runtime shims so ordinary Node.js and Web code can run under GJS. The apps use both. The upstream GJS runtime itself is not vendored at this level — it lives in `gjsify/refs/gjs` when a source reference is needed.
 
 ## Getting started
 

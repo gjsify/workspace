@@ -7,9 +7,6 @@
 [submodule "eu.jumplink.Learn6502"]
 	path = eu.jumplink.Learn6502
 	url = https://github.com/flathub/eu.jumplink.Learn6502
-[submodule "gjs"]
-	path = gjs
-	url = git@ssh.gitlab.gnome.org:GNOME/gjs.git
 [submodule "gjsify"]
 	path = gjsify
 	url = git@github.com:gjsify/gjsify.git
