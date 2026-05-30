@@ -19,3 +19,6 @@
 [submodule "ts-for-gir"]
 	path = ts-for-gir
 	url = git@github.com:gjsify/ts-for-gir.git
+[submodule "design/app-illustrations"]
+	path = design/app-illustrations
+	url = https://gitlab.gnome.org/Teams/Design/app-illustrations.git

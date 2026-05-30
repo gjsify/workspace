@@ -8,15 +8,17 @@ This directory is a **meta-monorepo**: a workspace that collects several indepen
 
 ## Subprojects
 
-| Path | Repo | Role |
-|---|---|---|
-| [doc-old/](doc-old/) | `gjsify/doc` | Legacy documentation site (archived) |
-| [easy6502/](easy6502/) | `JumpLink/easy6502` | 6502 learning env — GNOME/Web/Android apps (Yarn 4 monorepo) |
-| [eu.jumplink.Learn6502/](eu.jumplink.Learn6502/) | `flathub/eu.jumplink.Learn6502` | Flathub manifest for the Learn6502 app |
-| [gjsify/](gjsify/) | `gjsify/gjsify` | Node.js + Web + DOM APIs for GJS (Yarn workspaces monorepo) |
-| [gnome-shell/](gnome-shell/) | `gjsify/gnome-shell` | GNOME Shell fork — TS typings/tooling ground |
-| [pixel-rpg/map-editor/](pixel-rpg/map-editor/) | `PixelRPG/map-editor` | Tile RPG map editor (Excalibur.js + GJS/GTK) |
-| [ts-for-gir/](ts-for-gir/) | `gjsify/ts-for-gir` | GIR → TypeScript generator. Produces `@girs/*` consumed by the others |
+| Path | Repo | Role | Local AGENTS.md |
+|---|---|---|---|
+| [doc-old/](doc-old/) | `gjsify/doc` | Legacy documentation site (archived) | — |
+| [easy6502/](easy6502/) | `JumpLink/easy6502` | 6502 learning env — GNOME/Web/Android apps (Yarn 4 monorepo) | [easy6502/AGENTS.md](easy6502/AGENTS.md) |
+| [eu.jumplink.Learn6502/](eu.jumplink.Learn6502/) | `flathub/eu.jumplink.Learn6502` | Flathub manifest for the Learn6502 app | — |
+| [gjsify/](gjsify/) | `gjsify/gjsify` | Node.js + Web + DOM APIs for GJS (Yarn/gjsify-install monorepo) | [gjsify/AGENTS.md](gjsify/AGENTS.md) |
+| [gnome-shell/](gnome-shell/) | `gjsify/gnome-shell` | GNOME Shell fork — TS typings/tooling ground | — |
+| [pixel-rpg/map-editor/](pixel-rpg/map-editor/) | `PixelRPG/map-editor` | Tile RPG map editor (Excalibur.js + GJS/GTK) | [pixel-rpg/map-editor/AGENTS.md](pixel-rpg/map-editor/AGENTS.md) |
+| [ts-for-gir/](ts-for-gir/) | `gjsify/ts-for-gir` | GIR → TypeScript generator. Produces `@girs/*` consumed by the others | [ts-for-gir/AGENTS.md](ts-for-gir/AGENTS.md) |
+
+When working inside a subproject, that file is authoritative — this file only collects what spans the whole workspace.
 
 Dependency direction (at the code level): `ts-for-gir` → generates `@girs/*` types → consumed by `gjsify`, `easy6502`, `pixel-rpg/map-editor`, GJS app examples. The upstream GJS runtime everything targets is not tracked directly here — use `gjsify/refs/gjs` when you need it as a reference. The other repos are independent.
 
@@ -50,6 +52,120 @@ These hold across every subproject. When a subproject's AGENTS.md contradicts, t
 2. Read that subproject's `AGENTS.md` — it is the source of truth for structure, commands, and conventions.
 3. Run its own `yarn install` / `yarn build` / `yarn check` / `yarn test` as documented there.
 4. Commit within the subproject repo. Only bump the gitlink in this workspace when the subproject change is pushed and you want the workspace to pin to it.
+
+## Keeping submodules up to date
+
+Use [`update-submodules.sh`](update-submodules.sh) to pull every submodule (workspace-level + their nested `refs/`) to the latest commit of its tracked branch:
+
+```
+./update-submodules.sh              # all submodules, recursive
+./update-submodules.sh --top-only   # only the 6 workspace subprojects
+./update-submodules.sh --dry-run    # report only, no changes
+```
+
+Safety: skips working trees with real file edits, never rewrites local history (`--ff-only`), and on detached HEAD checks out the tracking branch configured in the parent `.gitmodules` (falling back to the remote's default). A `git pull --ff-only` that hits a non-fast-forward is reported as failed, not merged.
+
+Per-subproject equivalents (run from inside the subproject):
+
+- `ts-for-gir`: `gjsify run update:submodules` — wraps `git submodule foreach git pull` (non-recursive).
+- The other subprojects have no dedicated script; the root `update-submodules.sh` is the canonical entry point.
+
+## Reference projects (cross-project index)
+
+Most subprojects vendor upstream code as **read-only git submodules** inside their own `refs/` directory (easy6502 uses `references/`). They exist as ground truth for retrieval-led reasoning — read them when you need to understand how upstream actually behaves, copy a small idiom, or trace a bug back to source. Do not modify them, do not import from them as runtime code, and remember that gitlink updates happen inside the owning subproject, not at the workspace root.
+
+Categories below group the **upstream projects** that appear under each subproject's `refs/`. Locations show where to look; a project that appears in more than one subproject is listed once with all locations.
+
+### JS runtimes & embeddable engines
+For runtime semantics, polyfill targets, and embedding reference. Most relevant when working under `gjsify/packages/node/*` or implementing a missing GJS/SpiderMonkey-shaped API.
+
+- `gjs` — GNOME's SpiderMonkey JS runtime (the target). In [`gjsify/refs/gjs`](gjsify/refs/gjs) and [`ts-for-gir/refs/gjs`](ts-for-gir/refs/gjs).
+- `node` — Node.js itself. In [`gjsify/refs/node`](gjsify/refs/node).
+- `deno` — Deno. In [`gjsify/refs/deno`](gjsify/refs/deno).
+- `bun` — Bun. In [`gjsify/refs/bun`](gjsify/refs/bun).
+- `quickjs` — QuickJS (quickjs-ng). In [`gjsify/refs/quickjs`](gjsify/refs/quickjs).
+- `edgejs` — Wasmer's WinterCG edge runtime. In [`gjsify/refs/edgejs`](gjsify/refs/edgejs).
+- `node-test` — Wasmer test corpus for Node compat. In [`gjsify/refs/node-test`](gjsify/refs/node-test).
+- `llrt` — AWS Low-Latency Runtime. In [`gjsify/refs/llrt`](gjsify/refs/llrt).
+- `workerd` — Cloudflare Workers runtime. In [`gjsify/refs/workerd`](gjsify/refs/workerd).
+
+### Node.js polyfills (stream / HTTP / crypto / WS)
+Browserify-style polyfill packages that gjsify draws from when porting Node APIs to GJS.
+
+- `stream-http`, `readable-stream`, `streamx`, `undici`, `axios`, `ws` — under [`gjsify/refs/`](gjsify/refs/).
+- Crypto family: `crypto-browserify`, `browserify-cipher`, `browserify-sign`, `create-ecdh`, `create-hash`, `create-hmac`, `diffie-hellman`, `hash-base`, `pbkdf2`, `public-encrypt`, `randombytes`, `randomfill` — under [`gjsify/refs/`](gjsify/refs/).
+
+### DOM / Web platform
+For `@gjsify/dom-*` and `@gjsify/web-*` package implementations and conformance.
+
+- `jsdom` — In [`gjsify/refs/jsdom`](gjsify/refs/jsdom).
+- `happy-dom` — In [`gjsify/refs/happy-dom`](gjsify/refs/happy-dom).
+- `wpt` — Web Platform Tests (shallow). In [`gjsify/refs/wpt`](gjsify/refs/wpt).
+- `ungap-structured-clone` — Spec-aligned `structuredClone`. In [`gjsify/refs/ungap-structured-clone`](gjsify/refs/ungap-structured-clone).
+
+### Graphics / canvas / WebGL
+For 2D/3D rendering in GJS, headless GL backends, and Cairo/Pango bridges.
+
+- `three` (three.js) — In [`gjsify/refs/three`](gjsify/refs/three).
+- `node-canvas` — In [`gjsify/refs/node-canvas`](gjsify/refs/node-canvas).
+- `headless-gl` — Headless WebGL via OSMesa. In [`gjsify/refs/headless-gl`](gjsify/refs/headless-gl).
+- `webgl` (KhronosGroup conformance) — In [`gjsify/refs/webgl`](gjsify/refs/webgl).
+- `libepoxy` — OpenGL function loader (used by GTK). In [`gjsify/refs/libepoxy`](gjsify/refs/libepoxy).
+
+### GNOME platform & libraries
+The runtime/platform stack that everything under `gjsify`, `easy6502/packages/app-gnome`, and `pixel-rpg/map-editor` targets.
+
+- `libadwaita`, `adwaita-fonts`, `adwaita-icon-theme`, `adwaita-web` — In [`gjsify/refs/`](gjsify/refs/).
+- `libsoup` — HTTP/WS client/server used as Node-http bridge. In [`gjsify/refs/libsoup`](gjsify/refs/libsoup).
+- `webkit` — WebKitGTK source. In [`gjsify/refs/webkit`](gjsify/refs/webkit).
+- `epiphany` — GNOME Web (WebKit consumer). In [`gjsify/refs/epiphany`](gjsify/refs/epiphany).
+- `troll` — sonnyp's GJS helper library. In [`gjsify/refs/troll`](gjsify/refs/troll).
+- `peachy` — vixalien's GJS playground. In [`gjsify/refs/peachy`](gjsify/refs/peachy).
+- `showtime` — GNOME video player (reference GTK4/Adw app). In [`gjsify/refs/showtime`](gjsify/refs/showtime).
+- `gnome-shell` (read-only mirror) — In [`ts-for-gir/refs/gnome-shell`](ts-for-gir/refs/gnome-shell). The workspace's editable fork is at the top-level [`gnome-shell/`](gnome-shell/).
+- Design / assets: `app-mockups`, `app-icon-requests`, `library-icons` — under [`gjsify/refs/`](gjsify/refs/) and [`ts-for-gir/refs/library-icons`](ts-for-gir/refs/library-icons).
+
+### GIR / GObject Introspection / docs tooling
+Sources used by `ts-for-gir` to read and parse GIR and to model GNOME documentation.
+
+- `vala-girs` — GIR corpus for tests. In [`ts-for-gir/refs/vala-girs`](ts-for-gir/refs/vala-girs).
+- `gtk-rs-gir-files` — Curated GIR files from gtk-rs. In [`ts-for-gir/refs/gtk-rs-gir-files`](ts-for-gir/refs/gtk-rs-gir-files).
+- `devdocsgjs` — GNOME devdocs JSON output. In [`ts-for-gir/refs/devdocsgjs`](ts-for-gir/refs/devdocsgjs).
+- `gjs-guide` — GJS official docs. In [`ts-for-gir/refs/gjs-guide`](ts-for-gir/refs/gjs-guide).
+- `gi-docgen` — Doc generator for GIR. In [`ts-for-gir/refs/gi-docgen`](ts-for-gir/refs/gi-docgen).
+- `gtk-doc` — Legacy GTK doc tool. In [`ts-for-gir/refs/gtk-doc`](ts-for-gir/refs/gtk-doc).
+- `valadoc-org` — Vala docs site. In [`ts-for-gir/refs/valadoc-org`](ts-for-gir/refs/valadoc-org).
+- `typedoc` — TS doc generator (used to render `@girs/*`). In [`ts-for-gir/refs/typedoc`](ts-for-gir/refs/typedoc).
+
+### Build / bundler / package-manager tooling
+Reference for the gjsify CLI bundle (esbuild → Rolldown), workspace tooling, and the long-term bundler migration.
+
+- `esbuild` — In [`gjsify/refs/esbuild`](gjsify/refs/esbuild).
+- `rolldown` — In [`gjsify/refs/rolldown`](gjsify/refs/rolldown).
+- `vite` — In [`gjsify/refs/vite`](gjsify/refs/vite).
+- `astro` — In [`gjsify/refs/astro`](gjsify/refs/astro).
+- `oxc`, `biome`, `lightningcss` — Rust-based JS/CSS toolchain. Under [`gjsify/refs/`](gjsify/refs/).
+- `ts-for-gir` (mirror) — In [`gjsify/refs/ts-for-gir`](gjsify/refs/ts-for-gir). Editable copy is at the top-level [`ts-for-gir/`](ts-for-gir/).
+- Package managers: `npm-cli`, `yarn` (berry), `pnpm` — under [`gjsify/refs/`](gjsify/refs/). Relevant to the future `gjsify install` resolver.
+
+### Game engine / WebRTC / networking
+Mostly relevant under `pixel-rpg/map-editor` and `gjsify`'s WebRTC packages.
+
+- `excalibur`, `excalibur-tiled` — JS game engine + Tiled loader. In [`gjsify/refs/excalibur`](gjsify/refs/excalibur), [`gjsify/refs/excalibur-tiled`](gjsify/refs/excalibur-tiled).
+- `map-editor` (mirror) — In [`gjsify/refs/map-editor`](gjsify/refs/map-editor). Editable copy is at [`pixel-rpg/map-editor/`](pixel-rpg/map-editor/).
+- `Game-Dev-Library` — Curated game-dev resources. In [`pixel-rpg/map-editor/refs/Game-Dev-Library`](pixel-rpg/map-editor/refs/Game-Dev-Library).
+- `gamepad-mirror` — Gamepad input bridge. In [`gjsify/refs/gamepad-mirror`](gjsify/refs/gamepad-mirror).
+- `libdatachannel`, `node-datachannel`, `node-gst-webrtc`, `webrtc-samples` — WebRTC stack. Under [`gjsify/refs/`](gjsify/refs/).
+- `webtorrent`, `webtorrent-desktop`, `socket.io` — Peer/socket layers. Under [`gjsify/refs/`](gjsify/refs/).
+
+### Mobile / cross-platform
+Reference for `easy6502`'s Android app and any future GJS↔mobile bridges.
+
+- `nativescript` — In [`easy6502/references/nativescript`](easy6502/references/nativescript). (Note: easy6502 uses `references/`, not `refs/`.)
+
+### Misc
+- `deepkit` — TS runtime types / reflection. In [`gjsify/refs/deepkit`](gjsify/refs/deepkit).
+- `loro` — CRDT library (also has its own AGENTS.md). In [`gjsify/refs/loro`](gjsify/refs/loro).
 
 ## Do not
 
