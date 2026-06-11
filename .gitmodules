@@ -22,3 +22,6 @@
 [submodule "design/app-illustrations"]
 	path = design/app-illustrations
 	url = https://gitlab.gnome.org/Teams/Design/app-illustrations.git
+[submodule "pixel-rpg/zelda-games"]
+	path = pixel-rpg/zelda-games
+	url = git@github.com:PixelRPG/oot-2d.git
