@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "maker": {
+        "command": "${CLAUDE_PROJECT_DIR:-.}/pixel-rpg/map-editor/apps/mcp-bridge/dist/mcp-bridge.gjs.mjs"
+      }
+    } 
+  }
