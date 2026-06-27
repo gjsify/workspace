@@ -25,3 +25,12 @@
 [submodule "pixel-rpg/zelda-games"]
 	path = pixel-rpg/zelda-games
 	url = git@github.com:PixelRPG/oot-2d.git
+[submodule "design/app-mockups"]
+	path = design/app-mockups
+	url = https://gitlab.gnome.org/Teams/Design/app-mockups.git
+[submodule "design/developer.gnome.org-hig"]
+	path = design/developer.gnome.org-hig
+	url = https://gitlab.gnome.org/Teams/Websites/developer.gnome.org-hig.git
+[submodule "design/software-mockups"]
+	path = design/software-mockups
+	url = https://gitlab.gnome.org/Teams/Design/software-mockups.git
