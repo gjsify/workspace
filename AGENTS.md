@@ -1,175 +1,174 @@
 # AGENTS.md — gjsify workspace (meta-monorepo)
 
-Prefer retrieval-led reasoning over pre-training-led reasoning — read files under `gjs/`, `ts-for-gir/types/`, and each subproject's own source before assuming behavior.
+Prefer retrieval-led reasoning over pre-training-led reasoning — read files under each subproject's source before assuming behavior.
 
-This directory is a **meta-monorepo**: a workspace that collects several independent repos (each itself a monorepo or project) as git submodules. There is no shared build or package manager at this level. Every subproject is self-contained with its own `package.json`, lockfile, tooling and `AGENTS.md`.
-
-**Nearest AGENTS.md wins.** Per [agents.md](https://agents.md/), agents read the closest file walking upward. When you work inside a subproject, its local `AGENTS.md` is authoritative. This file only documents what spans the whole workspace.
+This directory is a **meta-monorepo** collecting several independent repos as git submodules. There is no shared build/package manager at this level. **Nearest AGENTS.md wins** — when working inside a subproject, its local AGENTS.md is authoritative.
 
 ## Subprojects
 
 | Path | Repo | Role | Local AGENTS.md |
 |---|---|---|---|
-| [doc-old/](doc-old/) | `gjsify/doc` | Legacy documentation site (archived) | — |
-| [easy6502/](easy6502/) | `JumpLink/easy6502` | 6502 learning env — GNOME/Web/Android apps (Yarn 4 monorepo) | [easy6502/AGENTS.md](easy6502/AGENTS.md) |
-| [eu.jumplink.Learn6502/](eu.jumplink.Learn6502/) | `flathub/eu.jumplink.Learn6502` | Flathub manifest for the Learn6502 app | — |
-| [gjsify/](gjsify/) | `gjsify/gjsify` | Node.js + Web + DOM APIs for GJS (Yarn/gjsify-install monorepo) | [gjsify/AGENTS.md](gjsify/AGENTS.md) |
-| [gnome-shell/](gnome-shell/) | `gjsify/gnome-shell` | GNOME Shell fork — TS typings/tooling ground | — |
+| [gjsify/](gjsify/) | `gjsify/gjsify` | Node.js+Web+DOM APIs for GJS (Yarn monorepo) | [gjsify/AGENTS.md](gjsify/AGENTS.md) |
+| [ts-for-gir/](ts-for-gir/) | `gjsify/ts-for-gir` | GIR→TypeScript generator, produces `@girs/*` types | [ts-for-gir/AGENTS.md](ts-for-gir/AGENTS.md) |
+| [easy6502/](easy6502/) | `JumpLink/easy6502` | 6502 learning env — GNOME/Web/Android apps (Yarn 4) | [easy6502/AGENTS.md](easy6502/AGENTS.md) |
 | [pixel-rpg/map-editor/](pixel-rpg/map-editor/) | `PixelRPG/map-editor` | Tile RPG map editor (Excalibur.js + GJS/GTK) | [pixel-rpg/map-editor/AGENTS.md](pixel-rpg/map-editor/AGENTS.md) |
-| [ts-for-gir/](ts-for-gir/) | `gjsify/ts-for-gir` | GIR → TypeScript generator. Produces `@girs/*` consumed by the others | [ts-for-gir/AGENTS.md](ts-for-gir/AGENTS.md) |
-
-When working inside a subproject, that file is authoritative — this file only collects what spans the whole workspace.
-
-Dependency direction (at the code level): `ts-for-gir` → generates `@girs/*` types → consumed by `gjsify`, `easy6502`, `pixel-rpg/map-editor`, GJS app examples. The upstream GJS runtime everything targets is not tracked directly here — use `gjsify/refs/gjs` when you need it as a reference. The other repos are independent.
+| [gnome-shell/](gnome-shell/) | `gjsify/gnome-shell` | GNOME Shell fork — TS typings/tooling ground | — |
+| [doc-old/](doc-old/) | `gjsify/doc` | Legacy documentation site (archived) | — |
+| [eu.jumplink.Learn6502/](eu.jumplink.Learn6502/) | `flathub/eu.jumplink.Learn6502` | Flathub manifest | — |
 
 ## Submodule workflow
 
-All subdirectories listed above (except as noted) are **git submodules** of this workspace.
+- Never `rm -rf` a submodule — working copies contain uncommitted work.
+- Changes inside a submodule are committed to **that submodule's own repo**. `cd <sub> && git add … && git commit … && git push`, then update the gitlink: `cd .. && git add <sub> && git commit`.
+- `refs/` dirs inside subprojects (e.g. `gjsify/refs/*`, `ts-for-gir/types/`) are read-only submodules of that subproject — do not modify.
+- `pixel-rpg/` is a plain folder (not a git repo), only holds the `map-editor` submodule.
 
-- Never `rm -rf` a submodule — the working copies contain in-progress, uncommitted work.
-- Changes inside a submodule are committed to **that submodule's own repo**, not to this workspace. `cd <sub> && git add … && git commit …` then push there. Afterwards update the gitlink in this workspace (`cd .. && git add <sub> && git commit`).
-- Do not run `git submodule update` without `--no-checkout` awareness — it may discard local state. Prefer inspecting `git status` inside each submodule first.
-- `refs/` dirs *inside* subprojects (e.g. `gjsify/refs/*`, `ts-for-gir/types/`) are submodules of those subprojects, not of this workspace. Treat them read-only unless the subproject's AGENTS.md says otherwise.
-- `pixel-rpg/` is a plain folder that only exists to hold the `map-editor` submodule — it is not itself a git repo.
+Dependency direction: `ts-for-gir` → generates `@girs/*` types → consumed by `gjsify`, `easy6502`, `pixel-rpg/map-editor`.
+
+## Quick commands
+
+Always enter the subproject first (`cd gjsify`, `cd easy6502`, etc.) — each has its own tooling.
+
+```bash
+# Install dependencies
+cd <subproject> && yarn install        # gjsify, ts-for-gir, easy6502
+cd <subproject> && gjsify install      # pixel-rpg/map-editor (Yarn-free)
+
+# Build all
+cd <subproject> && yarn build          # or: gjsify foreach build
+
+# Run all tests
+cd <subproject> && yarn test           # or: gjsify foreach test
+
+# Run a single test file (in the package directory)
+cd <subproject>/packages/<pkg> && yarn run test:node   # Node-only
+cd <subproject>/packages/<pkg> && yarn run test:gjs    # GJS-only
+cd <subproject>/packages/<pkg> && yarn run test         # both
+
+# Lint + format
+cd gjsify && gjsify lint               # oxlint (all subprojects: `gjsify`-based)
+cd gjsify && gjsify format             # oxfmt
+
+# Type-check
+cd gjsify && gjsify foreach check      # tsc --noEmit per workspace
+
+# Update submodules (from workspace root)
+./update-submodules.sh                 # recursive pull
+./update-submodules.sh --dry-run       # preview only
+```
+
+**Single test quick reference (gjsify subproject):**
+```
+gjsify workspace @gjsify/<pkg> run test:node     # Node tests in one package
+gjsify workspace @gjsify/<pkg> run test:gjs      # GJS tests in one package
+gjsify workspace @gjsify/<pkg> run test          # both
+# E2E test:
+node --test tests/e2e/<name>/run.mjs
+```
 
 ## Cross-cutting conventions
 
-These hold across every subproject. When a subproject's AGENTS.md contradicts, that file wins for its subtree.
+These hold across every subproject. When a subproject's AGENTS.md contradicts, that file wins.
 
 - **TypeScript strict.** Avoid `any`; use `unknown` + type guards. Validate at boundaries, trust internals.
-- **ESM only.** `"type": "module"`, `.ts` imports resolved per the subproject's tooling.
-- **Yarn workspaces.** Each subproject uses Yarn (v4 where applicable). No npm/pnpm mixing.
-- **GJS target.** GJS 1.86.0 / SpiderMonkey 128 / esbuild `firefox128` baseline for any code that runs under GJS.
-- **Types come from `@girs/*`** (generated by `ts-for-gir`). Never hand-edit generated types.
+- **ESM only.** `"type": "module"`, `.ts` imports resolved per subproject's tooling.
+- **Yarn workspaces.** Each subproject uses Yarn (v4 where applicable), except pixel-rpg/map-editor (gjsify-native).
+- **GJS target.** GJS 1.86.0 / SpiderMonkey 128+ / esbuild `firefox128` baseline for GJS code.
+- **Types from `@girs/*`** (generated by ts-for-gir). Never hand-edit generated types.
 - **English** for code, comments, commit messages, documentation.
-- **Conventional commits** — `<type>[scope]: <description>`, imperative, ≤50 char subject. Each subproject may add scope prefixes (`Gnome:`, `Core:`, `Web:`, etc. in easy6502).
-- **No AGENTS.md / STATUS.md drift.** Subprojects that document architectural decisions in their own AGENTS.md expect those files to be updated in the same commit as the change.
+- **Conventional commits** — `<type>[scope]: <description>`, imperative, ≤50 char subject. Types: `feat`, `fix`, `perf`, `docs`, `refactor`, `build`, `ci`, `chore`, `test`, `revert`, `style`.
 - **Commit at the right level.** Never stage files from multiple subprojects in one commit — each repo commits independently.
 
-## Working in this workspace
+## Code style
 
-1. Identify which subproject the task belongs to; `cd` into it.
-2. Read that subproject's `AGENTS.md` — it is the source of truth for structure, commands, and conventions.
-3. Run its own `yarn install` / `yarn build` / `yarn check` / `yarn test` as documented there.
-4. Commit within the subproject repo. Only bump the gitlink in this workspace when the subproject change is pushed and you want the workspace to pin to it.
+Rules extracted from subproject AGENTS.md files. Apply unless overridden by the local file.
 
-## Keeping submodules up to date
+### Types & naming
+- `PascalCase` for types, classes, enums, interfaces | `camelCase` for vars, functions, methods | `SCREAMING_SNAKE_CASE` for constants
+- Boolean prefix: `is`, `has`, `can`, `should` (e.g. `isReady`, `hasChildren`)
+- Interfaces for shapes; `type` for unions, intersections, mapped types
+- Generics with proper constraints; discriminated unions for complex state
+- Utility types (`Partial`, `Pick`, `Omit`, `Record`) over manual construction
+- `index.ts` = barrel re-exports only, never implementation
+- Avoid `any` — use `unknown` + type guard. `as unknown as T` for unrelated casts.
 
-Use [`update-submodules.sh`](update-submodules.sh) to pull every submodule (workspace-level + their nested `refs/`) to the latest commit of its tracked branch:
+### Imports & modules
+- Named exports preferred. Default exports only for singleton values or entry-points.
+- Node built-ins: `import { readFile } from 'node:fs'` (prefix form).
+- Workspace packages: `import { X } from '@gjsify/<pkg>'` (never relative cross-package imports).
+- Side-effect imports (`import 'pkg/register'`) in dedicated register files, never in `index.ts`.
+- No circular dependencies; keep import graphs acyclic.
 
+### Formatting
+- 4-space indentation, 120 print width, single quotes, trailing semicolons, trailing commas.
+- Formatted by `oxfmt` (JS/TS) across gjsify+ts-for-gir, Biome across easy6502+map-editor.
+
+### Classes
+- Order: static props → instance props → constructor → static methods → instance methods
+- Within each: public → protected → private
+- Single responsibility; prefer composition over inheritance.
+
+### Error handling
+- Custom error classes with meaningful messages, not generic `Error`.
+- Validate at API boundaries; trust internals after validation.
+- `ErrnoException | null` pattern for Node-style callbacks.
+- Pure functions over mutations; early returns/guard clauses over deep nesting.
+- Functions: pure when possible, max ~3 params (use object params for more), split if >20 lines.
+
+### Comments
+- Comment *why*, not *what*. Code should be self-documenting for *what*.
+- JSDoc for public APIs; omit for trivial/internal code.
+- Source attribution: `// Adapted from <project> (<refs/path>). Copyright (c) <holder>. License.`
+
+## Testing
+
+Each subproject has its own testing setup. The gjsify subproject uses `@gjsify/unit` (describe/it/expect, cross-platform Node+GJS). ts-for-gir uses Vitest. easy6502 uses gjsify-unit.
+
+```ts
+// @gjsify/unit pattern (gjsify subproject)
+import { describe, it, expect } from '@gjsify/unit';
+await describe('module.function', async () => {
+  await it('should do X', async () => {
+    expect(result).toBe(expected);
+  });
+});
 ```
-./update-submodules.sh              # all submodules, recursive
-./update-submodules.sh --top-only   # only the 6 workspace subprojects
-./update-submodules.sh --dry-run    # report only, no changes
-```
 
-Safety: skips working trees with real file edits, never rewrites local history (`--ff-only`), and on detached HEAD checks out the tracking branch configured in the parent `.gitmodules` (falling back to the remote's default). A `git pull --ff-only` that hits a non-fast-forward is reported as failed, not merged.
-
-Per-subproject equivalents (run from inside the subproject):
-
-- `ts-for-gir`: `gjsify run update:submodules` — wraps `git submodule foreach git pull` (non-recursive).
-- The other subprojects have no dedicated script; the root `update-submodules.sh` is the canonical entry point.
+**Testing rules (gjsify subproject):**
+- Cross-platform packages: use `node:` prefix for Node imports. Test on both Node + GJS.
+- GJS-only packages: import `@gjsify/*` directly.
+- Ported upstream tests: keep `// Ported from refs/<pkg>/test/<name>.js`, never weaken assertions.
+- Regression from real-world bugs: add targeted test to relevant `*.spec.ts`, not just the example.
+- `/register` side-effect tests in dedicated `register.spec.ts`, not common spec.
 
 ## Reference projects (cross-project index)
 
-Most subprojects vendor upstream code as **read-only git submodules** inside their own `refs/` directory (easy6502 uses `references/`). They exist as ground truth for retrieval-led reasoning — read them when you need to understand how upstream actually behaves, copy a small idiom, or trace a bug back to source. Do not modify them, do not import from them as runtime code, and remember that gitlink updates happen inside the owning subproject, not at the workspace root.
+Vendored upstream code as **read-only git submodules** under each subproject's `refs/` (easy6502: `references/`). Read for ground truth; do NOT modify.
 
-Categories below group the **upstream projects** that appear under each subproject's `refs/`. Locations show where to look; a project that appears in more than one subproject is listed once with all locations.
+**JS runtimes:** `gjs` (gjsify/refs/gjs + ts-for-gir/refs/gjs), `node` (gjsify/refs/node), `deno`, `bun`, `quickjs`, `workerd`, `llrt`, `edgejs`
+**Node polyfills:** `stream-http`, `readable-stream`, `undici`, `ws`, `axios`, `crypto-browserify` family (hash/hmac/pbkdf2/sign/diffie-hellman/public-encrypt etc.)
+**DOM/Web:** `jsdom`, `happy-dom`, `wpt`, `ungap-structured-clone`
+**Graphics/WebGL:** `three`, `node-canvas`, `headless-gl`, `webgl` (Khronos spec), `libepoxy`
+**GNOME platform:** `libadwaita`, `adwaita-fonts`, `adwaita-icon-theme`, `libsoup`, `webkit`, `epiphany`, `troll`, `peachy`, `showtime`
+**GIR tooling:** `vala-girs`, `gtk-rs-gir-files`, `gi-docgen`, `gtk-doc`, `typedoc`, `gjs-guide`, `devdocsgjs`
+**Build/bundler:** `esbuild`, `rolldown`, `vite`, `astro`, `oxc`, `biome`, `lightningcss`, `npm-cli`, `yarn`, `pnpm`
+**Game/WebRTC:** `excalibur`, `excalibur-tiled`, `libdatachannel`, `node-datachannel`, `node-gst-webrtc`, `webtorrent`, `socket.io`
+**Mobile:** `nativescript` (easy6502/references/nativescript only)
+**Misc:** `deepkit` (TS runtime types), `loro` (CRDT), `memfs`, `wa-sqlite`
 
-### JS runtimes & embeddable engines
-For runtime semantics, polyfill targets, and embedding reference. Most relevant when working under `gjsify/packages/node/*` or implementing a missing GJS/SpiderMonkey-shaped API.
+## Keeping submodules up to date
 
-- `gjs` — GNOME's SpiderMonkey JS runtime (the target). In [`gjsify/refs/gjs`](gjsify/refs/gjs) and [`ts-for-gir/refs/gjs`](ts-for-gir/refs/gjs).
-- `node` — Node.js itself. In [`gjsify/refs/node`](gjsify/refs/node).
-- `deno` — Deno. In [`gjsify/refs/deno`](gjsify/refs/deno).
-- `bun` — Bun. In [`gjsify/refs/bun`](gjsify/refs/bun).
-- `quickjs` — QuickJS (quickjs-ng). In [`gjsify/refs/quickjs`](gjsify/refs/quickjs).
-- `edgejs` — Wasmer's WinterCG edge runtime. In [`gjsify/refs/edgejs`](gjsify/refs/edgejs).
-- `node-test` — Wasmer test corpus for Node compat. In [`gjsify/refs/node-test`](gjsify/refs/node-test).
-- `llrt` — AWS Low-Latency Runtime. In [`gjsify/refs/llrt`](gjsify/refs/llrt).
-- `workerd` — Cloudflare Workers runtime. In [`gjsify/refs/workerd`](gjsify/refs/workerd).
+```bash
+./update-submodules.sh              # all submodules, recursive
+./update-submodules.sh --top-only   # only the 6 workspace subprojects
+./update-submodules.sh --dry-run    # report only
+```
 
-### Node.js polyfills (stream / HTTP / crypto / WS)
-Browserify-style polyfill packages that gjsify draws from when porting Node APIs to GJS.
-
-- `stream-http`, `readable-stream`, `streamx`, `undici`, `axios`, `ws` — under [`gjsify/refs/`](gjsify/refs/).
-- Crypto family: `crypto-browserify`, `browserify-cipher`, `browserify-sign`, `create-ecdh`, `create-hash`, `create-hmac`, `diffie-hellman`, `hash-base`, `pbkdf2`, `public-encrypt`, `randombytes`, `randomfill` — under [`gjsify/refs/`](gjsify/refs/).
-
-### DOM / Web platform
-For `@gjsify/dom-*` and `@gjsify/web-*` package implementations and conformance.
-
-- `jsdom` — In [`gjsify/refs/jsdom`](gjsify/refs/jsdom).
-- `happy-dom` — In [`gjsify/refs/happy-dom`](gjsify/refs/happy-dom).
-- `wpt` — Web Platform Tests (shallow). In [`gjsify/refs/wpt`](gjsify/refs/wpt).
-- `ungap-structured-clone` — Spec-aligned `structuredClone`. In [`gjsify/refs/ungap-structured-clone`](gjsify/refs/ungap-structured-clone).
-
-### Graphics / canvas / WebGL
-For 2D/3D rendering in GJS, headless GL backends, and Cairo/Pango bridges.
-
-- `three` (three.js) — In [`gjsify/refs/three`](gjsify/refs/three).
-- `node-canvas` — In [`gjsify/refs/node-canvas`](gjsify/refs/node-canvas).
-- `headless-gl` — Headless WebGL via OSMesa. In [`gjsify/refs/headless-gl`](gjsify/refs/headless-gl).
-- `webgl` (KhronosGroup conformance) — In [`gjsify/refs/webgl`](gjsify/refs/webgl).
-- `libepoxy` — OpenGL function loader (used by GTK). In [`gjsify/refs/libepoxy`](gjsify/refs/libepoxy).
-
-### GNOME platform & libraries
-The runtime/platform stack that everything under `gjsify`, `easy6502/packages/app-gnome`, and `pixel-rpg/map-editor` targets.
-
-- `libadwaita`, `adwaita-fonts`, `adwaita-icon-theme`, `adwaita-web` — In [`gjsify/refs/`](gjsify/refs/).
-- `libsoup` — HTTP/WS client/server used as Node-http bridge. In [`gjsify/refs/libsoup`](gjsify/refs/libsoup).
-- `webkit` — WebKitGTK source. In [`gjsify/refs/webkit`](gjsify/refs/webkit).
-- `epiphany` — GNOME Web (WebKit consumer). In [`gjsify/refs/epiphany`](gjsify/refs/epiphany).
-- `troll` — sonnyp's GJS helper library. In [`gjsify/refs/troll`](gjsify/refs/troll).
-- `peachy` — vixalien's GJS playground. In [`gjsify/refs/peachy`](gjsify/refs/peachy).
-- `showtime` — GNOME video player (reference GTK4/Adw app). In [`gjsify/refs/showtime`](gjsify/refs/showtime).
-- `gnome-shell` (read-only mirror) — In [`ts-for-gir/refs/gnome-shell`](ts-for-gir/refs/gnome-shell). The workspace's editable fork is at the top-level [`gnome-shell/`](gnome-shell/).
-- Design / assets: `app-mockups`, `app-icon-requests`, `library-icons` — under [`gjsify/refs/`](gjsify/refs/) and [`ts-for-gir/refs/library-icons`](ts-for-gir/refs/library-icons).
-
-### GIR / GObject Introspection / docs tooling
-Sources used by `ts-for-gir` to read and parse GIR and to model GNOME documentation.
-
-- `vala-girs` — GIR corpus for tests. In [`ts-for-gir/refs/vala-girs`](ts-for-gir/refs/vala-girs).
-- `gtk-rs-gir-files` — Curated GIR files from gtk-rs. In [`ts-for-gir/refs/gtk-rs-gir-files`](ts-for-gir/refs/gtk-rs-gir-files).
-- `devdocsgjs` — GNOME devdocs JSON output. In [`ts-for-gir/refs/devdocsgjs`](ts-for-gir/refs/devdocsgjs).
-- `gjs-guide` — GJS official docs. In [`ts-for-gir/refs/gjs-guide`](ts-for-gir/refs/gjs-guide).
-- `gi-docgen` — Doc generator for GIR. In [`ts-for-gir/refs/gi-docgen`](ts-for-gir/refs/gi-docgen).
-- `gtk-doc` — Legacy GTK doc tool. In [`ts-for-gir/refs/gtk-doc`](ts-for-gir/refs/gtk-doc).
-- `valadoc-org` — Vala docs site. In [`ts-for-gir/refs/valadoc-org`](ts-for-gir/refs/valadoc-org).
-- `typedoc` — TS doc generator (used to render `@girs/*`). In [`ts-for-gir/refs/typedoc`](ts-for-gir/refs/typedoc).
-
-### Build / bundler / package-manager tooling
-Reference for the gjsify CLI bundle (esbuild → Rolldown), workspace tooling, and the long-term bundler migration.
-
-- `esbuild` — In [`gjsify/refs/esbuild`](gjsify/refs/esbuild).
-- `rolldown` — In [`gjsify/refs/rolldown`](gjsify/refs/rolldown).
-- `vite` — In [`gjsify/refs/vite`](gjsify/refs/vite).
-- `astro` — In [`gjsify/refs/astro`](gjsify/refs/astro).
-- `oxc`, `biome`, `lightningcss` — Rust-based JS/CSS toolchain. Under [`gjsify/refs/`](gjsify/refs/).
-- `ts-for-gir` (mirror) — In [`gjsify/refs/ts-for-gir`](gjsify/refs/ts-for-gir). Editable copy is at the top-level [`ts-for-gir/`](ts-for-gir/).
-- Package managers: `npm-cli`, `yarn` (berry), `pnpm` — under [`gjsify/refs/`](gjsify/refs/). Relevant to the future `gjsify install` resolver.
-
-### Game engine / WebRTC / networking
-Mostly relevant under `pixel-rpg/map-editor` and `gjsify`'s WebRTC packages.
-
-- `excalibur`, `excalibur-tiled` — JS game engine + Tiled loader. In [`gjsify/refs/excalibur`](gjsify/refs/excalibur), [`gjsify/refs/excalibur-tiled`](gjsify/refs/excalibur-tiled).
-- `map-editor` (mirror) — In [`gjsify/refs/map-editor`](gjsify/refs/map-editor). Editable copy is at [`pixel-rpg/map-editor/`](pixel-rpg/map-editor/).
-- `Game-Dev-Library` — Curated game-dev resources. In [`pixel-rpg/map-editor/refs/Game-Dev-Library`](pixel-rpg/map-editor/refs/Game-Dev-Library).
-- `gamepad-mirror` — Gamepad input bridge. In [`gjsify/refs/gamepad-mirror`](gjsify/refs/gamepad-mirror).
-- `libdatachannel`, `node-datachannel`, `node-gst-webrtc`, `webrtc-samples` — WebRTC stack. Under [`gjsify/refs/`](gjsify/refs/).
-- `webtorrent`, `webtorrent-desktop`, `socket.io` — Peer/socket layers. Under [`gjsify/refs/`](gjsify/refs/).
-
-### Mobile / cross-platform
-Reference for `easy6502`'s Android app and any future GJS↔mobile bridges.
-
-- `nativescript` — In [`easy6502/references/nativescript`](easy6502/references/nativescript). (Note: easy6502 uses `references/`, not `refs/`.)
-
-### Misc
-- `deepkit` — TS runtime types / reflection. In [`gjsify/refs/deepkit`](gjsify/refs/deepkit).
-- `loro` — CRDT library (also has its own AGENTS.md). In [`gjsify/refs/loro`](gjsify/refs/loro).
+Skips working trees with real file edits; uses `--ff-only`; never rewrites local history.
 
 ## Do not
 
-- Do not create a shared `package.json`, `tsconfig.json`, `node_modules/`, or build step at this workspace level — each submodule owns its own.
-- Do not modify `refs/` content anywhere.
-- Do not run formatters / linters across subprojects from this level — run them inside each subproject with its own config.
-- Do not commit a gitlink bump in this workspace that points to an unpushed submodule commit.
+- Create shared `package.json`, `tsconfig.json`, `node_modules/`, or build step at this workspace level.
+- Modify `refs/` content anywhere.
+- Run formatters/linters across subprojects from this level — run inside each subproject with its own config.
+- Commit a gitlink bump that points to an unpushed submodule commit.
