@@ -76,13 +76,18 @@ bump() { # $1 = 1:updated 2:skipped 3:failed 4:inited
 # query as a last resort.
 default_branch() { # $1 = submodule dir → echoes branch name (or nothing)
   local d="$1" br
+  # Always ask the live remote first. A merely-existing-but-stale local
+  # origin/HEAD (e.g. left pointing at a non-default branch like 'gh-pages'
+  # from some earlier state) would otherwise be trusted as long as that
+  # branch still exists — which it usually does, silently checking out the
+  # wrong branch. Real-world case: easy6502's origin/HEAD was stuck on
+  # 'gh-pages' (a real, existing branch) while GitHub's actual default was
+  # 'main', and the old existence-only check never caught it.
+  git -C "$d" remote set-head origin -a >/dev/null 2>&1
   br=$(git -C "$d" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null); br=${br#origin/}
   if [ -n "$br" ] && git -C "$d" show-ref --verify --quiet "refs/remotes/origin/$br"; then
     printf '%s' "$br"; return 0
   fi
-  git -C "$d" remote set-head origin -a >/dev/null 2>&1
-  br=$(git -C "$d" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null); br=${br#origin/}
-  if [ -n "$br" ]; then printf '%s' "$br"; return 0; fi
   br=$(git -C "$d" remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
   [ "$br" = "(unknown)" ] && br=
   printf '%s' "$br"
