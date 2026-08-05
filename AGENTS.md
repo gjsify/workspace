@@ -8,7 +8,7 @@ This directory is a **meta-monorepo** collecting several independent repos as gi
 
 | Path | Repo | Role | Local AGENTS.md |
 |---|---|---|---|
-| [gjsify/](gjsify/) | `gjsify/gjsify` | Node.js+Web+DOM APIs for GJS (Yarn monorepo) | [gjsify/AGENTS.md](gjsify/AGENTS.md) |
+| [gjsify/](gjsify/) | `gjsify/gjsify` | Node.js+Web+DOM APIs for GJS (Yarn monorepo) | [gjsify/AGENTS.md](gjsify/AGENTS.md) — itself a hub, routing to a per-subtree AGENTS.md under `packages/*` + `tests/` |
 | [ts-for-gir/](ts-for-gir/) | `gjsify/ts-for-gir` | GIR→TypeScript generator, produces `@girs/*` types | [ts-for-gir/AGENTS.md](ts-for-gir/AGENTS.md) |
 | [easy6502/](easy6502/) | `JumpLink/easy6502` | 6502 learning env — GNOME/Web/Android apps (Yarn 4) | [easy6502/AGENTS.md](easy6502/AGENTS.md) |
 | [pixel-rpg/map-editor/](pixel-rpg/map-editor/) | `PixelRPG/map-editor` | Tile RPG map editor (Excalibur.js + GJS/GTK) | [pixel-rpg/map-editor/AGENTS.md](pixel-rpg/map-editor/AGENTS.md) |
@@ -81,7 +81,15 @@ These hold across every subproject. When a subproject's AGENTS.md contradicts, t
 
 ## Code style
 
-Rules extracted from subproject AGENTS.md files. Apply unless overridden by the local file.
+**This is the ONLY home for these rules** — they are not duplicated in the subprojects, so do
+not delete them here as a supposed copy (checked 2026-08-05: `Boolean prefix`, the class-member
+order and the error-handling conventions appear nowhere below). Apply unless a subproject's own
+AGENTS.md overrides them.
+
+Formatting itself is not documented here: `oxfmt` (gjsify, ts-for-gir) and Biome (easy6502,
+map-editor) own indentation, quotes, print width and trailing commas, and their config files are
+the source of truth. Run `gjsify format` / the subproject's formatter rather than matching a
+prose description of it.
 
 ### Types & naming
 - `PascalCase` for types, classes, enums, interfaces | `camelCase` for vars, functions, methods | `SCREAMING_SNAKE_CASE` for constants
@@ -98,10 +106,6 @@ Rules extracted from subproject AGENTS.md files. Apply unless overridden by the 
 - Workspace packages: `import { X } from '@gjsify/<pkg>'` (never relative cross-package imports).
 - Side-effect imports (`import 'pkg/register'`) in dedicated register files, never in `index.ts`.
 - No circular dependencies; keep import graphs acyclic.
-
-### Formatting
-- 4-space indentation, 120 print width, single quotes, trailing semicolons, trailing commas.
-- Formatted by `oxfmt` (JS/TS) across gjsify+ts-for-gir, Biome across easy6502+map-editor.
 
 ### Classes
 - Order: static props → instance props → constructor → static methods → instance methods
